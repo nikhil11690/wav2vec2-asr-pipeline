@@ -1,0 +1,9 @@
+{
+  "model": "facebook/wav2vec2-base-960h",
+  "num_samples": 30,
+  "wer": 0.0474,
+  "cer": 0.0156,
+  "avg_latency_sec": 1.871,
+  "min_latency_sec": 0.3746,
+  "max_latency_sec": 8.9264
+}

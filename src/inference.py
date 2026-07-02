@@ -6,6 +6,10 @@ import os
 import torch
 from transformers import Wav2Vec2Processor, Wav2Vec2ForCTC
 from datasets import load_dataset
+import io
+import pandas as pd
+import soundfile as sf
+from huggingface_hub import hf_hub_download, list_repo_files
 
 MODEL_ID = "facebook/wav2vec2-base-960h"
 NUM_SAMPLES = 30
@@ -21,11 +25,24 @@ def load_model():
 
 
 def load_data():
-    print("Loading LibriSpeech test set (streaming)...")
-    dataset = load_dataset(
-        "librispeech_asr", "clean", split="test.clean", streaming=True
-    )
-    samples = list(dataset.take(NUM_SAMPLES))
+    REPO_ID = "hf-internal-testing/librispeech_asr_dummy"
+    print("Fetching dataset file list...")
+    files = list_repo_files(REPO_ID, repo_type="dataset")
+    parquet_files = [f for f in files if f.endswith(".parquet")]
+    parquet_file = parquet_files[0]
+
+    print(f"Downloading {parquet_file}...")
+    local_path = hf_hub_download(repo_id=REPO_ID, filename=parquet_file, repo_type="dataset")
+
+    df = pd.read_parquet(local_path)
+    samples = []
+    for _, row in df.head(NUM_SAMPLES).iterrows():
+        audio_bytes = row["audio"]["bytes"]
+        audio_array, sr = sf.read(io.BytesIO(audio_bytes))
+        samples.append({
+            "audio": {"array": audio_array, "sampling_rate": sr},
+            "text": row["text"],
+        })
     return samples
 
 
